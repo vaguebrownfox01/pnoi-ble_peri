@@ -15,4 +15,9 @@ void loop()
     {
         delay(100);
     }
+
+    if (!is_ble_connected && !is_ble_connecting)
+    {
+        init_pnoi_ble();
+    }
 }
