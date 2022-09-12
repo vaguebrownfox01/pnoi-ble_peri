@@ -19,16 +19,25 @@
 extern bool is_ble_connected;
 extern bool is_ble_connecting;
 
+class LEDCharacteristicCallBack : public BLECharacteristicCallbacks
+{
+public:
+    void onWrite(BLECharacteristic *characteristic_) override;
+};
+
+class PnoiServerCallbacks : public BLEServerCallbacks
+{
+    void onConnect(BLEServer *pServer);
+    void onDisconnect(BLEServer *pServer);
+};
+
 enum pnoi_action_code
 {
     start,
     stop,
-    error
+    error,
+    no_action
 };
-
-#define LED_PIN_RED 12
-#define LED_PIN_GREEN 27
-#define LED_PIN_BLUE 33
 
 pnoi_action_code get_action(std::string const &inString);
 void init_pnoi_ble();

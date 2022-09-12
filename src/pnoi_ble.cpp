@@ -1,4 +1,5 @@
 #include "pnoi_ble.h"
+#include "pnoi_ext.h"
 
 // LED Characteristic and Descriptor
 BLECharacteristic pnoiLEDCharacteristics(BLE_LED_CHARACTERISTIC_UUID, BLECharacteristic::PROPERTY_WRITE);
@@ -7,99 +8,43 @@ BLEDescriptor pnoiLEDDescriptor(BLE_LED_DESCRIPTOR_UUID);
 bool is_ble_connected = false;
 bool is_ble_connecting = false;
 
-class CharacteristicCallBack : public BLECharacteristicCallbacks
+void LEDCharacteristicCallBack::onWrite(BLECharacteristic *charx_)
 {
-public:
-    // This method not called
-    void onWrite(BLECharacteristic *characteristic_) override
+    const char *action = charx_->getValue().c_str();
+
+    switch (get_action(action))
     {
+    case start:
+        glow_green();
+        break;
 
-        std::string d = characteristic_->getValue();
-        size_t dl = characteristic_->getLength();
+    case stop:
+        glow_blue();
+        break;
 
-        const char *action = d.c_str();
-        switch (get_action(action))
-        {
-        case start:
-            digitalWrite(LED_PIN_RED, LOW);
-            digitalWrite(LED_PIN_GREEN, HIGH);
-            digitalWrite(LED_PIN_BLUE, LOW);
-            break;
+    case error:
+        glow_red();
+        break;
 
-        case stop:
-            digitalWrite(LED_PIN_RED, LOW);
-            digitalWrite(LED_PIN_GREEN, LOW);
-            digitalWrite(LED_PIN_BLUE, HIGH);
-            break;
-
-        case error:
-            digitalWrite(LED_PIN_RED, HIGH);
-            digitalWrite(LED_PIN_GREEN, LOW);
-            digitalWrite(LED_PIN_BLUE, LOW);
-            break;
-
-        default:
-            digitalWrite(LED_PIN_RED, HIGH);
-
-            break;
-        }
-
-        Serial.println(d.c_str());
+    default:
+        glow_red();
+        break;
     }
-};
 
-class ServerCallbacks : public BLEServerCallbacks
+    Serial.println(action);
+}
+
+void PnoiServerCallbacks::onConnect(BLEServer *pServer)
 {
-    void onConnect(BLEServer *pServer)
-    {
-        is_ble_connected = true;
-        is_ble_connecting = false;
-        digitalWrite(LED_PIN_RED, LOW);
-        digitalWrite(LED_PIN_GREEN, LOW);
-        digitalWrite(LED_PIN_BLUE, HIGH);
-    };
+    is_ble_connected = true;
+    is_ble_connecting = false;
+    glow_blue();
+}
 
-    void onDisconnect(BLEServer *pServer)
-    {
-        is_ble_connected = false;
-    }
-};
-
-void init_pnoi_ble()
+void PnoiServerCallbacks::onDisconnect(BLEServer *pServer)
 {
-
-    pinMode(LED_PIN_RED, OUTPUT);
-    pinMode(LED_PIN_GREEN, OUTPUT);
-    pinMode(LED_PIN_BLUE, OUTPUT);
-
-    // Create the BLE Device
-    BLEDevice::init(BLE_SERVER_NAME);
-
-    // Create BLE server
-    BLEServer *pServer = BLEDevice::createServer();
-    pServer->setCallbacks(new ServerCallbacks());
-
-    // Create BLE Service
-    BLEService *primaryService = pServer->createService(BLE_SERVICE_UUID);
-
-    // Create BLE Characteristics
-    primaryService->addCharacteristic(&pnoiLEDCharacteristics);
-    pnoiLEDDescriptor.setValue("Pnoi LED");
-    pnoiLEDCharacteristics.addDescriptor(&pnoiLEDDescriptor);
-    pnoiLEDCharacteristics.setCallbacks(new CharacteristicCallBack);
-
-    primaryService->start();
-
-    // Start advertising
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
-    pServer->getAdvertising()->start();
+    is_ble_connected = false;
     is_ble_connecting = true;
-    Serial.println("Waiting a client connection to notify...");
-
-    digitalWrite(LED_PIN_RED, HIGH);
-    digitalWrite(LED_PIN_GREEN, HIGH);
-    digitalWrite(LED_PIN_BLUE, HIGH);
 }
 
 pnoi_action_code get_action(std::string const &inString)
@@ -110,4 +55,36 @@ pnoi_action_code get_action(std::string const &inString)
         return stop;
     if (inString == "error")
         return error;
+
+    return no_action;
 };
+
+void init_pnoi_ble()
+{
+    // Create the BLE Device
+    BLEDevice::init(BLE_SERVER_NAME);
+
+    // Create BLE server
+    BLEServer *ble_server = BLEDevice::createServer();
+    ble_server->setCallbacks(new PnoiServerCallbacks());
+
+    // Create BLE Service
+    BLEService *ble_service = ble_server->createService(BLE_SERVICE_UUID);
+
+    // Create BLE Characteristics
+    ble_service->addCharacteristic(&pnoiLEDCharacteristics);
+    pnoiLEDDescriptor.setValue("Pnoi LED INDICATOR");
+    pnoiLEDCharacteristics.addDescriptor(&pnoiLEDDescriptor);
+    pnoiLEDCharacteristics.setCallbacks(new LEDCharacteristicCallBack);
+
+    ble_service->start();
+
+    // Start advertising
+    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
+    pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
+    ble_server->getAdvertising()->start();
+    is_ble_connecting = true;
+    Serial.println("Waiting a client connection to notify...");
+
+    glow_white();
+}
