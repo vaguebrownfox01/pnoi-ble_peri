@@ -10,7 +10,6 @@ void setup()
     init_pnoi_ble();
 }
 
-int x = 0;
 void loop()
 {
     if (is_ble_connected)
