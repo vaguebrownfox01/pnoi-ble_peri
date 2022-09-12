@@ -14,5 +14,6 @@ void glow_white();
 void glow_red();
 void glow_green();
 void glow_blue();
+void glow_pink();
 
 #endif

@@ -31,3 +31,9 @@ void glow_blue()
     digitalWrite(LED_PIN_GREEN, LOW);
     digitalWrite(LED_PIN_BLUE, HIGH);
 }
+void glow_pink()
+{
+    digitalWrite(LED_PIN_RED, HIGH);
+    digitalWrite(LED_PIN_GREEN, LOW);
+    digitalWrite(LED_PIN_BLUE, HIGH);
+}

@@ -44,7 +44,7 @@ void PnoiServerCallbacks::onConnect(BLEServer *pServer)
 void PnoiServerCallbacks::onDisconnect(BLEServer *pServer)
 {
     is_ble_connected = false;
-    is_ble_connecting = true;
+    // is_ble_connecting = true;
 }
 
 pnoi_action_code get_action(std::string const &inString)
@@ -80,8 +80,8 @@ void init_pnoi_ble()
     ble_service->start();
 
     // Start advertising
-    BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-    pAdvertising->addServiceUUID(BLE_SERVICE_UUID);
+    BLEAdvertising *pnoi_advertise = BLEDevice::getAdvertising();
+    pnoi_advertise->addServiceUUID(BLE_SERVICE_UUID);
     ble_server->getAdvertising()->start();
     is_ble_connecting = true;
     Serial.println("Waiting a client connection to notify...");
